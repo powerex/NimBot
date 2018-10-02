@@ -1,6 +1,8 @@
 
 package logic;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 public class GameNim {
@@ -8,6 +10,8 @@ public class GameNim {
     private final static int[] easySet = {3, 4, 5};
     private final static int[] mediumSet = {5, 6, 7};
     private final static int[] hardSet = {5, 7, 8, 9};
+    private Level level;
+    private GameStatus status;
 
     private Scanner scanner = new Scanner(System.in);
 
@@ -20,6 +24,20 @@ public class GameNim {
         this.stones = stones;
         preSet = stones.clone();
         binary = new String[stones.length];
+    }
+
+    public int[] getRowIndexes() {
+        List<Integer> list = new LinkedList<>();
+        for (int i=0; i<stones.length; i++) {
+            if (stones[i] != 0) list.add(i+1);
+        }
+        int[] array = new int[list.size()];
+        list.toArray(new int[][]{array});
+        return array;
+    }
+
+    public GameStatus getGameStatus() {
+        return new GameStatus(this.level, this.status, this.stones);
     }
 
     public int[] getStones() {
@@ -42,9 +60,9 @@ public class GameNim {
 
     public GameNim(Level level) {
         switch(level) {
-            case EASY: stones = easySet; break;
-            case MEDIM: stones = mediumSet; break;
-            case HARD: stones = hardSet; break;
+            case EASY: stones = easySet; this.level = Level.EASY; break;
+            case MEDIM: stones = mediumSet; this.level = Level.MEDIM; break;
+            case HARD: stones = hardSet; this.level = Level.HARD; break;
             default: stones = new int[] {1, 2};
         }
         preSet = stones.clone();
@@ -74,7 +92,7 @@ public class GameNim {
         return pos;
     }
 
-    private String rightove() {
+    private String rightMove() {
         toBinary();
         int pos = isSafe();
         if (pos == -1) {
@@ -134,7 +152,7 @@ public class GameNim {
                 System.out.println("User WIN!");
                 break;
             }
-            game.rightove();
+            game.rightMove();
             if (game.isOver()) {
                 System.out.println("Bot WIN!");
                 break;
@@ -188,5 +206,11 @@ public class GameNim {
                 max = getDigit(i);
         }
         return max;
+    }
+
+    public void canceLastMove() {
+    }
+
+    public void stop() {
     }
 }

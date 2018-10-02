@@ -1,11 +1,15 @@
 package model;
 
+import logic.GameNim;
+import logic.Level;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
@@ -15,33 +19,52 @@ import static java.lang.Math.toIntExact;
 
 public class KeyBot extends TelegramLongPollingBot {
 
-    final int ButtonsInRow = 5;
-    final int ButtonsInRowStones = 7;
+    private final int ButtonsInRow = 5;
+    private final int ButtonsInRowStones = 7;
+
+    GameNim game = null;
 
     @Override
     public void onUpdateReceived(Update update) {
 
-        // We check if the update has a message and the message has text
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String message_text = update.getMessage().getText();
             long chat_id = update.getMessage().getChatId();
-            if (update.getMessage().getText().equals("/start")) {
-
-                SendMessage message = new SendMessage() // Create a message object object
-                        .setChatId(chat_id)
-                        .setText("You send long text /staaaaaaaart");
-
-                int[] arr = {1, 2, 4, 5};
-                message.setReplyMarkup(getRowChoiseKeyboard(arr));
-                try {
-                    execute(message); // Sending our message object to user
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-            } else {
-
+            switch (update.getMessage().getText()) {
+                case "/start":
+                    sendMsgButtons("Hello my friend", chat_id);
+                    break;
+                case "/new":
+                    sendReplyMessage("New game was started", chat_id);
+                    EditMessageText new_message = new EditMessageText();
+                    new_message.setChatId(chat_id)
+                            //.setMessageId(update.getCallbackQuery().getMessage().getChatId())
+                            .setText("---");
+                    new_message.setReplyMarkup(getDifficultKeyboard());
+                    try {
+                        execute(new_message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                    //add inlinekeyBoard;
+                    game = new GameNim(Level.EASY);
+                    break;
+                case "/stop":
+                    sendReplyMessage("Game was stopped. To play new game press \"/new\" button or type \'/new\' as message", chat_id);
+                    game.stop();
+                    game = null;
+                    break;
+                case "/help":
+                    sendReplyMessage("No help yet))", chat_id);
+                    break;
+                case "/cancel":
+                    if (game!=null) {
+                        game.canceLastMove();
+                    } else {
+                        sendReplyMessage("No started game", chat_id);
+                    }
+                    break;
+                default:
             }
-
         } else if (update.hasCallbackQuery()) {
 
             // Set variables
@@ -51,22 +74,24 @@ public class KeyBot extends TelegramLongPollingBot {
 
             EditMessageText new_message = new EditMessageText();
             switch (call_data) {
-                case "ans_1":
+                case "/easy":
+                    if (game == null) {
+                        game = new GameNim(Level.EASY);
+                    }
+                    break;
+                case "r_1":
                     String answer = "1";
                     new_message.setChatId(chat_id)
                                .setMessageId(toIntExact(message_id))
                                .setText(answer);
-                    new_message.setReplyMarkup(getStoneChiseKeyboard(7));
+                    new_message.setReplyMarkup(getStoneChoiseKeyboard(7));
 
                     break;
-                case "/help":
-                    new_message.setChatId(chat_id)
-                               .setMessageId(toIntExact(message_id))
-                               .setText("No help ))");
                 case "s_1":
                     new_message.setChatId(chat_id)
                                .setMessageId(toIntExact(message_id))
                                .setText("get " + call_data + " stones");
+                    break;
 
             }
             try {
@@ -78,6 +103,63 @@ public class KeyBot extends TelegramLongPollingBot {
         }
     }
 
+    private void sendReplyMessage(String message, long chatId) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.enableMarkdown(true);
+        sendMessage.setText(message);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendMsgButtons(String msg, long chatId){
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.enableMarkdown(true);
+        sendMessage.setReplyMarkup(getKeyboadMarkup());
+        sendMessage.setChatId(chatId);
+        //sendMessage.setReplyToMessageId(message.getMessageId());
+        sendMessage.setText(msg);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private ReplyKeyboardMarkup getKeyboadMarkup() {
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+
+        replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setResizeKeyboard(true);
+        replyKeyboardMarkup.setOneTimeKeyboard(true);
+
+        // Создаем список строк клавиатуры
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Первая строчка клавиатуры
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        // Добавляем кнопки в первую строчку клавиатуры
+
+        keyboardFirstRow.add("/new");
+        keyboardFirstRow.add("/stop");
+
+        // Вторая строчка клавиатуры
+        KeyboardRow keyboardSecondRow = new KeyboardRow();
+        // Добавляем кнопки во вторую строчку клавиатуры
+        keyboardSecondRow.add("/cancel");
+        keyboardSecondRow.add("/help");
+
+        // Добавляем все строчки клавиатуры в список
+        keyboard.add(keyboardFirstRow);
+        keyboard.add(keyboardSecondRow);
+
+        replyKeyboardMarkup.setKeyboard(keyboard);
+        return replyKeyboardMarkup;
+    }
+
     private InlineKeyboardMarkup getRowChoiseKeyboard(int[] row) {
         int buttonsCount = row.length;
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
@@ -85,7 +167,7 @@ public class KeyBot extends TelegramLongPollingBot {
         rowsInline.add(new ArrayList<>());
         for (int i=0; i<buttonsCount; i++) {
             String caption = String.valueOf(row[i]);
-            rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("ans_"+caption));
+            rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("r_"+caption));
             if (i%ButtonsInRow == ButtonsInRow-1) rowsInline.add(new ArrayList<>());
         }
         rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
@@ -94,7 +176,7 @@ public class KeyBot extends TelegramLongPollingBot {
         return markupInline;
     }
 
-    private InlineKeyboardMarkup getStoneChiseKeyboard(int count) {
+    private InlineKeyboardMarkup getStoneChoiseKeyboard(int count) {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         rowsInline.add(new ArrayList<>());
@@ -105,6 +187,17 @@ public class KeyBot extends TelegramLongPollingBot {
         }
         rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
         // Add it to the message
+        keyboardMarkup.setKeyboard(rowsInline);
+        return keyboardMarkup;
+    }
+
+    private InlineKeyboardMarkup getDifficultKeyboard() {
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        rowsInline.add(new ArrayList<>());
+        rowsInline.get(0).add(new InlineKeyboardButton().setText("EASY").setCallbackData("/easy"));
+        rowsInline.get(0).add(new InlineKeyboardButton().setText("MEDIUM").setCallbackData("/medium"));
+        rowsInline.get(0).add(new InlineKeyboardButton().setText("HARD").setCallbackData("/hard"));
         keyboardMarkup.setKeyboard(rowsInline);
         return keyboardMarkup;
     }

@@ -74,7 +74,7 @@ public class NimBot extends TelegramLongPollingBot {
                     String view = formMessage();
                     sendMsg(message, view);
                 }
-                else sendMsg(message, "game already started");
+                else sendMsg(message, "game already started\n" + formMessage());
             }
             else if (message.getText().equals("/4")) {
                 StringBuilder sb = new StringBuilder();
