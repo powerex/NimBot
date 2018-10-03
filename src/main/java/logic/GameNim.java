@@ -61,7 +61,7 @@ public class GameNim {
     public GameNim(Level level) {
         switch(level) {
             case EASY: stones = easySet; this.level = Level.EASY; break;
-            case MEDIM: stones = mediumSet; this.level = Level.MEDIM; break;
+            case MEDIUM: stones = mediumSet; this.level = Level.MEDIUM; break;
             case HARD: stones = hardSet; this.level = Level.HARD; break;
             default: stones = new int[] {1, 2};
         }

@@ -1,5 +1,5 @@
 package logic;
 
 public enum Level {
-    EASY, MEDIM, HARD
+    EASY, MEDIUM, HARD
 }
