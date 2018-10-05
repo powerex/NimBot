@@ -15,7 +15,8 @@ public class GameRender {
                 for (int i=0; i<n; i++) {
                     sb.append(icon.getIcon("doughnut"));
                 }
-            }
+            } else {
+                sb.append(icon.getIcon("lock"));            }
             sb.append("\n");
         }
         return sb.toString();

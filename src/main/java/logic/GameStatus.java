@@ -2,12 +2,12 @@ package logic;
 
 public class GameStatus {
     private Level level;
-    private GameStatus gameStatus;
+    private Status Status;
     private int[] stones;
 
-    public GameStatus(Level level, GameStatus gameStatus, int[] stones) {
+    public GameStatus(Level level, Status status, int[] stones) {
         this.level = level;
-        this.gameStatus = gameStatus;
+        this.Status = status;
         this.stones = stones;
     }
 
@@ -16,7 +16,11 @@ public class GameStatus {
     }
 
     public GameStatus getGameStatus() {
-        return gameStatus;
+        return this;
+    }
+
+    public Status getStatus() {
+        return Status;
     }
 
     public int[] getStones() {

@@ -1,9 +1,7 @@
 
 package logic;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class GameNim {
 
@@ -11,7 +9,7 @@ public class GameNim {
     private final static int[] mediumSet = {5, 6, 7};
     private final static int[] hardSet = {5, 7, 8, 9};
     private Level level;
-    private GameStatus status;
+    private Status status;
 
     private Scanner scanner = new Scanner(System.in);
 
@@ -24,6 +22,11 @@ public class GameNim {
         this.stones = stones;
         preSet = stones.clone();
         binary = new String[stones.length];
+        status = Status.PLAYING;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     public int[] getRowIndexes() {
@@ -50,6 +53,7 @@ public class GameNim {
 
     public void setMove(int row, int number) {
         stones[row - 1] -= number;
+        if (isOver()) status = Status.WIN;
     }
 
     public boolean isOver() {
@@ -60,9 +64,9 @@ public class GameNim {
 
     public GameNim(Level level) {
         switch(level) {
-            case EASY: stones = easySet; this.level = Level.EASY; break;
-            case MEDIUM: stones = mediumSet; this.level = Level.MEDIUM; break;
-            case HARD: stones = hardSet; this.level = Level.HARD; break;
+            case EASY: stones = Arrays.copyOf(easySet, easySet.length); this.level = Level.EASY; break;
+            case MEDIUM: stones = Arrays.copyOf(mediumSet, mediumSet.length); this.level = Level.MEDIUM; break;
+            case HARD: stones = Arrays.copyOf(hardSet, hardSet.length); this.level = Level.HARD; break;
             default: stones = new int[] {1, 2};
         }
         preSet = stones.clone();
@@ -92,7 +96,7 @@ public class GameNim {
         return pos;
     }
 
-    private String rightMove() {
+    public Move rightMove() {
         toBinary();
         int pos = isSafe();
         if (pos == -1) {
@@ -104,7 +108,7 @@ public class GameNim {
             String ss = "Take 1 from " + (maxRow+1);
             System.out.println(ss);
             toBinary();
-            return ss;
+            return new Move(maxRow+1, 1);
         } else {
             int i = 0;
             while (binary[i].charAt(pos) == '0') i++;
@@ -124,10 +128,9 @@ public class GameNim {
             int newNumber = fromString(binary[i]);
             int number = stones[i] - newNumber;
             stones[i] = newNumber;
-            String ss = "Take " + number + " from " + (i+1);
-            System.out.println(ss);
             toBinary();
-            return ss;
+            if (isOver()) status = Status.LOSE;
+            return new Move(i+1, number);
         }
     }
 
@@ -149,7 +152,7 @@ public class GameNim {
         while (true) {
             game.userMove();
             if (game.isOver()) {
-                System.out.println("User WIN!");
+                System.out.println("User WIN!\nOne more time? /new");
                 break;
             }
             game.rightMove();
