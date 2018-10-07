@@ -39,9 +39,9 @@ public class GameNim {
         return array;
     }
 
-    public GameStatus getGameStatus() {
-        return new GameStatus(this.level, this.status, this.stones);
-    }
+//    public GameStatus getGameStatus() {
+//        return new GameStatus(this.level, this.status, this.stones);
+//    }
 
     public int[] getStones() {
         return stones;
@@ -73,7 +73,7 @@ public class GameNim {
         binary = new String[stones.length];
     }
 
-    public void show() {
+    private void show() {
         for (int i=0; i<preSet.length; i++) {
             for (int j=0; j<preSet[i]; j++)
                 if (j < stones[i])

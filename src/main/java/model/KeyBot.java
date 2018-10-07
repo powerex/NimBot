@@ -23,7 +23,6 @@ public class KeyBot extends TelegramLongPollingBot {
     private Map<Long, GameNim> sessions = new HashMap<>();
 
     private int selectedRow = -1;
-    private int selectedNumber = -1;
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -113,7 +112,7 @@ public class KeyBot extends TelegramLongPollingBot {
                 message.setChatId(chat_id)
                         .setMessageId(toIntExact(message_id))
                         .setText("get " + s + " doughnuts");
-                selectedNumber = number;
+                int selectedNumber = number;
                 sessions.get(chat_id).setMove(selectedRow, selectedNumber);
                 renderGame(chat_id);
 
