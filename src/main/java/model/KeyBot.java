@@ -27,7 +27,7 @@ public class KeyBot extends TelegramLongPollingBot {
     KeyBot() {
         try {
             property =new Properties();
-            property.load(new FileInputStream("bot.properties"));
+            property.load(new FileInputStream("src/main/resources/bot.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -376,7 +376,7 @@ public class KeyBot extends TelegramLongPollingBot {
             int buttonsInRowStones = 7;
             if (i% buttonsInRowStones == buttonsInRowStones -1) rowsInline.add(new ArrayList<>());
         }
-        rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
+        //rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
         // Add it to the message
         keyboardMarkup.setKeyboard(rowsInline);
         return keyboardMarkup;
