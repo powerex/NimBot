@@ -20,10 +20,7 @@ import static java.lang.Math.toIntExact;
 
 public class KeyBot extends TelegramLongPollingBot {
 
-    private final int ButtonsInRow = 5;
-    private final int ButtonsInRowStones = 7;
-
-    private Map<Long, GameNim> sessions = new HashMap<Long, GameNim>();
+    private Map<Long, GameNim> sessions = new HashMap<>();
 
     private int selectedRow = -1;
     private int selectedNumber = -1;
@@ -346,7 +343,8 @@ public class KeyBot extends TelegramLongPollingBot {
             if (row[i] > 0) {
                 String caption = String.valueOf(i+1);
                 rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("r_"+caption));
-                if (j%ButtonsInRow == ButtonsInRow-1) rowsInline.add(new ArrayList<>());
+                int buttonsInRow = 5;
+                if (j% buttonsInRow == buttonsInRow -1) rowsInline.add(new ArrayList<>());
                 j++;
             }
         }
@@ -363,7 +361,8 @@ public class KeyBot extends TelegramLongPollingBot {
         for (int i=0; i<count; i++) {
             String caption = String.valueOf(i+1);
             rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("s_"+caption));
-            if (i%ButtonsInRowStones == ButtonsInRowStones-1) rowsInline.add(new ArrayList<>());
+            int buttonsInRowStones = 7;
+            if (i% buttonsInRowStones == buttonsInRowStones -1) rowsInline.add(new ArrayList<>());
         }
         rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
         // Add it to the message
