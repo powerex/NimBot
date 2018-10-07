@@ -8,7 +8,7 @@ public class Icon {
     private Map<String, String> icons;
 
     public Icon() {
-        icons = new HashMap<String, String>();
+        icons = new HashMap<>();
         icons.put("doughnut", "🍩");
         icons.put("lock", "\uD83D\uDD12");
         icons.put("unlock", "\uD83D\uDD13");

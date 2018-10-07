@@ -11,22 +11,27 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
 
 import static java.lang.Math.toIntExact;
 
 public class KeyBot extends TelegramLongPollingBot {
 
-    private final int ButtonsInRow = 5;
-    private final int ButtonsInRowStones = 7;
-
-    private Map<Long, GameNim> sessions = new HashMap<Long, GameNim>();
+    private Map<Long, GameNim> sessions = new HashMap<>();
+    private Properties property;
 
     private int selectedRow = -1;
-    private int selectedNumber = -1;
+
+    KeyBot() {
+        try {
+            property =new Properties();
+            property.load(new FileInputStream("bot.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -35,7 +40,7 @@ public class KeyBot extends TelegramLongPollingBot {
             long chat_id = update.getMessage().getChatId();
             switch (update.getMessage().getText()) {
                 case "/start":
-                    sendMsgButtons("Hello, my friend", chat_id);
+                    sendMsgButtons(chat_id);
                     break;
                 case "/new":
                     //sendReplyMessage("New game was started", chat_id);
@@ -61,7 +66,7 @@ public class KeyBot extends TelegramLongPollingBot {
                     break;
                 case "/cancel":
                     if (sessions.get(chat_id)!=null) {
-                        sessions.get(chat_id).canceLastMove();
+                        sessions.get(chat_id).cancelLastMove();
                         sendReplyMessage("No canceling in free version", chat_id);
                     } else {
                         sendReplyMessage("No started game", chat_id, true);
@@ -78,7 +83,7 @@ public class KeyBot extends TelegramLongPollingBot {
                 SendMessage keyBoard = new SendMessage();
                 keyBoard.setChatId(chat_id)
                         .setText("SelectRow");
-                keyBoard.setReplyMarkup(getRowChoiseKeyboard(game.getStones()));
+                keyBoard.setReplyMarkup(getRowChoiceKeyboard(game.getStones()));
                 try {
                     execute(keyBoard);
                 } catch (TelegramApiException e) {
@@ -91,184 +96,188 @@ public class KeyBot extends TelegramLongPollingBot {
             StringBuilder sb = new StringBuilder();
             //EditMessageText new_message = new EditMessageText();
             String answer;
-            if ((call_data.substring(0, 2).equals("r_"))) {
-                EditMessageText message = new EditMessageText();
-                answer  = call_data.substring(2, call_data.length());
-                System.out.println("Suppose is  " + answer);
-                int row = Integer.valueOf(answer);
-                selectedRow = row;
-                        message.setChatId(chat_id)
-                        .setMessageId(toIntExact(message_id))
-                        .setText(answer);
-                message.setReplyMarkup(getStoneChoiseKeyboard(sessions.get(chat_id).getStones()[row-1]));
-                try {
-                    execute(message);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-
-            }
-            else if ((call_data.substring(0, 2).equals("s_"))) {
-                EditMessageText message = new EditMessageText();
-                String s = call_data.substring(2, call_data.length());
-                System.out.println("Number maybe " + s);
-                int number = Integer.valueOf(s);
-                message.setChatId(chat_id)
-                        .setMessageId(toIntExact(message_id))
-                        .setText("get " + s + " doughnuts");
-                selectedNumber = number;
-                sessions.get(chat_id).setMove(selectedRow, selectedNumber);
-                renderGame(chat_id);
-
-                try {
-                    execute(message);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-
-                if (!sessions.get(chat_id).isOver()) {
-                    Move move = sessions.get(chat_id).rightMove();
-                    sendReplyMessage("Take " + move.getNumber() + "doughnut(s) from " + move.getRow() + " row", chat_id);
-                    renderGame(chat_id);
-                }
-
-                if (!sessions.get(chat_id).isOver()) {
-                    SendMessage keyBoard = new SendMessage();
-                    keyBoard.setChatId(chat_id)
-                            .setText("SelectRow");
-                    keyBoard.setReplyMarkup(getRowChoiseKeyboard(sessions.get(chat_id).getStones()));
+            switch (call_data.substring(0, 2)) {
+                case "r_": {
+                    EditMessageText message = new EditMessageText();
+                    answer = call_data.substring(2);
+                    System.out.println("Suppose is  " + answer);
+                    int row = Integer.valueOf(answer);
+                    selectedRow = row;
+                    message.setChatId(chat_id)
+                            .setMessageId(toIntExact(message_id))
+                            .setText(answer);
+                    message.setReplyMarkup(getStoneChoiceKeyboard(sessions.get(chat_id).getStones()[row - 1]));
                     try {
-                        execute(keyBoard);
+                        execute(message);
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
-                } else {
 
-                    switch (sessions.get(chat_id).getStatus()) {
-                        case WIN:
-                            sendReplyMessage("You WIN!!!", chat_id, true);
-                            sessions.put(chat_id, null);
-                            break;
-                        case LOSE:
-                            sendReplyMessage("You LOSE!!!\n Try /new game?", chat_id);
-                            sessions.put(chat_id, null);
-                            break;
-                    }
+                    break;
                 }
+                case "s_": {
+                    EditMessageText message = new EditMessageText();
+                    String s = call_data.substring(2);
+                    System.out.println("Number maybe " + s);
+                    int number = Integer.valueOf(s);
+                    message.setChatId(chat_id)
+                            .setMessageId(toIntExact(message_id))
+                            .setText("get " + s + " doughnuts");
+                    sessions.get(chat_id).setMove(selectedRow, number);
+                    renderGame(chat_id);
 
-            } else {
-                EditMessageText new_message = new EditMessageText();
-                boolean go = true;
-                switch (call_data) {
-                    case "/easy":
-                        if (sessions.get(chat_id) != null) {
-                            sb.append("Previous game corrupted\n");
-                        }
-                        GameNim g = new GameNim(Level.EASY);
-                        sessions.put(chat_id, g);
-                        sb.append("Game easy mode started");
-                        new_message.setChatId(chat_id)
-                                .setMessageId(toIntExact(message_id))
-                                .setText(sb.toString());
+                    try {
+                        execute(message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
 
-                        SendMessage view = new SendMessage();
-                        view.setChatId(chat_id)
-                                .setText(GameRender.getRender(sessions.get(chat_id)));
-                        try {
-                            execute(view);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
+                    if (!sessions.get(chat_id).isOver()) {
+                        Move move = sessions.get(chat_id).rightMove();
+                        sendReplyMessage("Take " + move.getNumber() + "doughnut(s) from " + move.getRow() + " row", chat_id);
+                        renderGame(chat_id);
+                    }
 
+                    if (!sessions.get(chat_id).isOver()) {
                         SendMessage keyBoard = new SendMessage();
                         keyBoard.setChatId(chat_id)
                                 .setText("SelectRow");
-                        keyBoard.setReplyMarkup(getRowChoiseKeyboard(sessions.get(chat_id).getStones()));
+                        keyBoard.setReplyMarkup(getRowChoiceKeyboard(sessions.get(chat_id).getStones()));
                         try {
                             execute(keyBoard);
                         } catch (TelegramApiException e) {
                             e.printStackTrace();
                         }
+                    } else {
 
-                        break;
-                    case "/medium":
-                        if (sessions.get(chat_id) != null) {
-                            sb.append("Previous game corrupted\n");
+                        switch (sessions.get(chat_id).getStatus()) {
+                            case WIN:
+                                sendReplyMessage("You WIN!!!", chat_id, true);
+                                sessions.put(chat_id, null);
+                                break;
+                            case LOSE:
+                                sendReplyMessage("You LOSE!!!\n Try /new game?", chat_id);
+                                sessions.put(chat_id, null);
+                                break;
                         }
-                        GameNim gM = new GameNim(Level.MEDIUM);
-                        sessions.put(chat_id, gM);
-                        sb.append("Game easy mode started");
-                        new_message.setChatId(chat_id)
-                                .setMessageId(toIntExact(message_id))
-                                .setText(sb.toString());
+                    }
 
-                        SendMessage viewM = new SendMessage();
-                        viewM.setChatId(chat_id)
-                                .setText(GameRender.getRender(sessions.get(chat_id)));
-                        try {
-                            execute(viewM);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-
-                        SendMessage keyBoardM = new SendMessage();
-                        keyBoardM.setChatId(chat_id)
-                                .setText("SelectRow");
-                        keyBoardM.setReplyMarkup(getRowChoiseKeyboard(sessions.get(chat_id).getStones()));
-                        try {
-                            execute(keyBoardM);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "/hard":
-                        if (sessions.get(chat_id) != null) {
-                            sb.append("Previous game corrupted\n");
-                        }
-                        GameNim gH = new GameNim(Level.HARD);
-                        sessions.put(chat_id, gH);
-                        sb.append("Game easy mode started");
-                        new_message.setChatId(chat_id)
-                                .setMessageId(toIntExact(message_id))
-                                .setText(sb.toString());
-
-                        SendMessage viewH = new SendMessage();
-                        viewH.setChatId(chat_id)
-                                .setText(GameRender.getRender(sessions.get(chat_id)));
-                        try {
-                            execute(viewH);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-
-                        SendMessage keyBoardH = new SendMessage();
-                        keyBoardH.setChatId(chat_id)
-                                .setText("SelectRow");
-                        keyBoardH.setReplyMarkup(getRowChoiseKeyboard(sessions.get(chat_id).getStones()));
-                        try {
-                            execute(keyBoardH);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "/cancelCreation":
-                        SendMessage sm = new SendMessage();
-                        sm.setChatId(chat_id).setText("Maybe next time...").setReplyMarkup(getKeyboadMarkup());
-                        go = false;
-                        try {
-                            execute(sm);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                        break;
+                    break;
                 }
-                System.out.println("Active sessions " + sessions.size());
-                System.out.println(sessions);
-                try {
-                   if (go) execute(new_message);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
+                default:
+                    EditMessageText new_message = new EditMessageText();
+                    boolean go = true;
+                    switch (call_data) {
+                        case "/easy":
+                            if (sessions.get(chat_id) != null) {
+                                sb.append("Previous game corrupted\n");
+                            }
+                            GameNim g = new GameNim(Level.EASY);
+                            sessions.put(chat_id, g);
+                            sb.append("Game easy mode started");
+                            new_message.setChatId(chat_id)
+                                    .setMessageId(toIntExact(message_id))
+                                    .setText(sb.toString());
+
+                            SendMessage view = new SendMessage();
+                            view.setChatId(chat_id)
+                                    .setText(GameRender.getRender(sessions.get(chat_id)));
+                            try {
+                                execute(view);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+
+                            SendMessage keyBoard = new SendMessage();
+                            keyBoard.setChatId(chat_id)
+                                    .setText("SelectRow");
+                            keyBoard.setReplyMarkup(getRowChoiceKeyboard(sessions.get(chat_id).getStones()));
+                            try {
+                                execute(keyBoard);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+
+                            break;
+                        case "/medium":
+                            if (sessions.get(chat_id) != null) {
+                                sb.append("Previous game corrupted\n");
+                            }
+                            GameNim gM = new GameNim(Level.MEDIUM);
+                            sessions.put(chat_id, gM);
+                            sb.append("Game easy mode started");
+                            new_message.setChatId(chat_id)
+                                    .setMessageId(toIntExact(message_id))
+                                    .setText(sb.toString());
+
+                            SendMessage viewM = new SendMessage();
+                            viewM.setChatId(chat_id)
+                                    .setText(GameRender.getRender(sessions.get(chat_id)));
+                            try {
+                                execute(viewM);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+
+                            SendMessage keyBoardM = new SendMessage();
+                            keyBoardM.setChatId(chat_id)
+                                    .setText("SelectRow");
+                            keyBoardM.setReplyMarkup(getRowChoiceKeyboard(sessions.get(chat_id).getStones()));
+                            try {
+                                execute(keyBoardM);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case "/hard":
+                            if (sessions.get(chat_id) != null) {
+                                sb.append("Previous game corrupted\n");
+                            }
+                            GameNim gH = new GameNim(Level.HARD);
+                            sessions.put(chat_id, gH);
+                            sb.append("Game easy mode started");
+                            new_message.setChatId(chat_id)
+                                    .setMessageId(toIntExact(message_id))
+                                    .setText(sb.toString());
+
+                            SendMessage viewH = new SendMessage();
+                            viewH.setChatId(chat_id)
+                                    .setText(GameRender.getRender(sessions.get(chat_id)));
+                            try {
+                                execute(viewH);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+
+                            SendMessage keyBoardH = new SendMessage();
+                            keyBoardH.setChatId(chat_id)
+                                    .setText("SelectRow");
+                            keyBoardH.setReplyMarkup(getRowChoiceKeyboard(sessions.get(chat_id).getStones()));
+                            try {
+                                execute(keyBoardH);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case "/cancelCreation":
+                            SendMessage sm = new SendMessage();
+                            sm.setChatId(chat_id).setText("Maybe next time...").setReplyMarkup(getKeyboardMarkup());
+                            go = false;
+                            try {
+                                execute(sm);
+                            } catch (TelegramApiException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                    }
+                    System.out.println("Active sessions " + sessions.size());
+                    System.out.println(sessions);
+                    try {
+                        if (go) execute(new_message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                    break;
             }
 
         }
@@ -283,7 +292,7 @@ public class KeyBot extends TelegramLongPollingBot {
         sendMessage.setChatId(chatId);
         sendMessage.enableMarkdown(true);
         sendMessage.setText(message);
-        if (withMainKeyBoard) sendMessage.setReplyMarkup(getKeyboadMarkup());
+        if (withMainKeyBoard) sendMessage.setReplyMarkup(getKeyboardMarkup());
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -291,13 +300,13 @@ public class KeyBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendMsgButtons(String msg, long chatId){
+    private void sendMsgButtons(long chatId){
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown(true);
-        sendMessage.setReplyMarkup(getKeyboadMarkup());
+        sendMessage.setReplyMarkup(getKeyboardMarkup());
         sendMessage.setChatId(chatId);
         //sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.setText(msg);
+        sendMessage.setText("Hello, my friend");
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -305,7 +314,7 @@ public class KeyBot extends TelegramLongPollingBot {
         }
     }
 
-    private ReplyKeyboardMarkup getKeyboadMarkup() {
+    private ReplyKeyboardMarkup getKeyboardMarkup() {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
 
         replyKeyboardMarkup.setSelective(true);
@@ -336,7 +345,7 @@ public class KeyBot extends TelegramLongPollingBot {
         return replyKeyboardMarkup;
     }
 
-    private InlineKeyboardMarkup getRowChoiseKeyboard(int[] row) {
+    private InlineKeyboardMarkup getRowChoiceKeyboard(int[] row) {
         int buttonsCount = row.length;
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
@@ -346,7 +355,8 @@ public class KeyBot extends TelegramLongPollingBot {
             if (row[i] > 0) {
                 String caption = String.valueOf(i+1);
                 rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("r_"+caption));
-                if (j%ButtonsInRow == ButtonsInRow-1) rowsInline.add(new ArrayList<>());
+                int buttonsInRow = 5;
+                if (j% buttonsInRow == buttonsInRow -1) rowsInline.add(new ArrayList<>());
                 j++;
             }
         }
@@ -356,14 +366,15 @@ public class KeyBot extends TelegramLongPollingBot {
         return markupInline;
     }
 
-    private InlineKeyboardMarkup getStoneChoiseKeyboard(int count) {
+    private InlineKeyboardMarkup getStoneChoiceKeyboard(int count) {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
         rowsInline.add(new ArrayList<>());
         for (int i=0; i<count; i++) {
             String caption = String.valueOf(i+1);
             rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText(caption).setCallbackData("s_"+caption));
-            if (i%ButtonsInRowStones == ButtonsInRowStones-1) rowsInline.add(new ArrayList<>());
+            int buttonsInRowStones = 7;
+            if (i% buttonsInRowStones == buttonsInRowStones -1) rowsInline.add(new ArrayList<>());
         }
         rowsInline.get(rowsInline.size()-1).add(new InlineKeyboardButton().setText("Help").setCallbackData("/help"));
         // Add it to the message
@@ -397,11 +408,11 @@ public class KeyBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "TryWinMe_bot";
+        return property.getProperty("bot.name");
     }
 
     @Override
     public String getBotToken() {
-        return "636053551:AAHhFYPJ9abV7KV-PPyVwda0FBVGBH4mIzs";
+        return property.getProperty("bot.token");
     }
 }

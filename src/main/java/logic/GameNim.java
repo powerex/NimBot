@@ -8,7 +8,6 @@ public class GameNim {
     private final static int[] easySet = {3, 4, 5};
     private final static int[] mediumSet = {5, 6, 7};
     private final static int[] hardSet = {5, 7, 8, 9};
-    private Level level;
     private Status status;
 
     private Scanner scanner = new Scanner(System.in);
@@ -16,9 +15,9 @@ public class GameNim {
     private int[] stones;
     private String[] binary;
     private int[] r;
-    private int[] preSet = null;
+    private int[] preSet;
 
-    public GameNim(int[] stones) {
+    private GameNim(int[] stones) {
         this.stones = stones;
         preSet = stones.clone();
         binary = new String[stones.length];
@@ -29,7 +28,7 @@ public class GameNim {
         return status;
     }
 
-    public int[] getRowIndexes() {
+/*    public int[] getRowIndexes() {
         List<Integer> list = new LinkedList<>();
         for (int i=0; i<stones.length; i++) {
             if (stones[i] != 0) list.add(i+1);
@@ -37,18 +36,14 @@ public class GameNim {
         int[] array = new int[list.size()];
         list.toArray(new int[][]{array});
         return array;
-    }
+    }*/
 
-    public GameStatus getGameStatus() {
+/*    public GameStatus getGameStatus() {
         return new GameStatus(this.level, this.status, this.stones);
-    }
+    }*/
 
     public int[] getStones() {
         return stones;
-    }
-
-    public int[] getPreSet() {
-        return preSet;
     }
 
     public void setMove(int row, int number) {
@@ -64,16 +59,19 @@ public class GameNim {
 
     public GameNim(Level level) {
         switch(level) {
-            case EASY: stones = Arrays.copyOf(easySet, easySet.length); this.level = Level.EASY; break;
-            case MEDIUM: stones = Arrays.copyOf(mediumSet, mediumSet.length); this.level = Level.MEDIUM; break;
-            case HARD: stones = Arrays.copyOf(hardSet, hardSet.length); this.level = Level.HARD; break;
+            case EASY: stones = Arrays.copyOf(easySet, easySet.length);
+                break;
+            case MEDIUM: stones = Arrays.copyOf(mediumSet, mediumSet.length);
+                break;
+            case HARD: stones = Arrays.copyOf(hardSet, hardSet.length);
+                break;
             default: stones = new int[] {1, 2};
         }
         preSet = stones.clone();
         binary = new String[stones.length];
     }
 
-    public void show() {
+    private void show() {
         for (int i=0; i<preSet.length; i++) {
             for (int j=0; j<preSet[i]; j++)
                 if (j < stones[i])
@@ -192,7 +190,7 @@ public class GameNim {
         return d;
     }
 
-    public void userMove() {
+    private void userMove() {
         System.out.println("Enter row: ");
         int row = scanner.nextInt();
         System.out.println("Enter number: ");
@@ -211,7 +209,7 @@ public class GameNim {
         return max;
     }
 
-    public void canceLastMove() {
+    public void cancelLastMove() {
     }
 
     public void stop() {

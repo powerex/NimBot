@@ -4,7 +4,7 @@ import model.Icon;
 
 public class GameRender {
 
-    static Icon icon = new Icon();
+    private static Icon icon = new Icon();
 
     public static String getRender(GameNim game) {
         int[] stones = game.getStones();
