@@ -44,6 +44,13 @@ public class KeyBot extends TelegramLongPollingBot {
                     break;
                 case "/new":
                     //sendReplyMessage("New game was started", chat_id);
+
+                    Logger.log(
+                            update.getMessage().getFrom().getFirstName(),
+                            update.getMessage().getFrom().getLastName(),
+                            String.valueOf(update.getMessage().getFrom().getId()),
+                            "New game", "show keyboard");
+
                     SendMessage new_message = new SendMessage();
                     new_message.setChatId(chat_id)
                             //.setMessageId(update.getCallbackQuery().getMessage().getChatId())
@@ -148,13 +155,16 @@ public class KeyBot extends TelegramLongPollingBot {
                     boolean go = true;
                     switch (call_data) {
                         case "/easy":
-                            beginNewGame(Level.HARD, chat_id, message_id);
+                            beginNewGame(Level.EASY, chat_id, message_id);
+                            System.out.println("Easy");
                             break;
                         case "/medium":
                             beginNewGame(Level.MEDIUM, chat_id, message_id);
+                            System.out.println("Medium");
                             break;
                         case "/hard":
                             beginNewGame(Level.HARD, chat_id, message_id);
+                            System.out.println("Hard");
                             break;
                         case "/cancelCreation":
                             SendMessage sm = new SendMessage();
