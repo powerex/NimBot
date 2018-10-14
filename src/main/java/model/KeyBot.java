@@ -48,8 +48,7 @@ public class KeyBot extends TelegramLongPollingBot {
                     Logger.log(
                             update.getMessage().getFrom().getFirstName(),
                             update.getMessage().getFrom().getLastName(),
-                            String.valueOf(update.getMessage().getFrom().getId()),
-                            "New game", "show keyboard");
+                            String.valueOf(update.getMessage().getFrom().getId()));
 
                     SendMessage new_message = new SendMessage();
                     new_message.setChatId(chat_id)
@@ -66,6 +65,7 @@ public class KeyBot extends TelegramLongPollingBot {
                     sendReplyMessage("Game was stopped. To play new game press \"/new\" button or type \'/new\' as message", chat_id, true);
                     if (sessions.get(chat_id) != null) {
                         sessions.get(chat_id).stop();
+                        System.out.println(update.getMessage().getFrom().getFirstName() + " " + update.getMessage().getFrom().getLastName() + " stopped the game\n");
                     }
                     break;
                 case "/help":
@@ -141,6 +141,7 @@ public class KeyBot extends TelegramLongPollingBot {
                         switch (sessions.get(chat_id).getStatus()) {
                             case WIN:
                                 sendReplyMessage("You WIN!!!", chat_id, true);
+                                System.out.println(update.getCallbackQuery().getFrom().getFirstName() + " wins!");
                                 sessions.put(chat_id, null);
                                 break;
                             case LOSE:

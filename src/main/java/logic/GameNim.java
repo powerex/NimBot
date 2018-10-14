@@ -103,8 +103,8 @@ public class GameNim {
                 if (stones[i] > stones[maxRow]) maxRow = i;
             }
             stones[maxRow]--;
-            String ss = "Take 1 from " + (maxRow+1);
-            System.out.println(ss);
+//            String ss = "Take 1 from " + (maxRow+1);
+//            System.out.println(ss);
             toBinary();
             return new Move(maxRow+1, 1);
         } else {
